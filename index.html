@@ -60,6 +60,7 @@
         <svg id="map" class="map" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" aria-label="Checkpoint Map">
           <g id="edges"></g>
           <g id="nodes"></g>
+          <!-- faint watermark check -->
           <g opacity=".08">
             <circle cx="320" cy="360" r="210" fill="var(--ring)"></circle>
             <path d="M230 360 L320 450 L500 260" stroke="#000" stroke-opacity=".2" stroke-width="68" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
@@ -90,35 +91,47 @@
   <div id="badge" class="badge">Stage 0</div>
 
 <script>
-/* ====================== CONFIG — EDIT ONLY THIS ====================== */
+/* ====================== CONFIG — REPLACE THESE 3 VALUES ====================== */
 const CONFIG = {
-  TOKEN_CA: "",                             // your contract / mint
+  TOKEN_CA: "PASTE_TOKEN_CA_HERE",                 // your contract/mint (used for live MC)
   LINKS: {
-    BUY: "",                                // your Pump.fun coin URL
-    TW:  ""                                 // your Twitter/X URL, e.g. https://x.com/CheckCoinSol
+    BUY: "PASTE_PUMPFUN_URL_HERE",                 // e.g. https://pump.fun/coin/xxxxxxxxxxxxxxxx
+    TW:  "PASTE_TWITTER_URL_HERE"                  // e.g. https://x.com/CheckCoinSol
   }
 };
-/* ==================================================================== */
+/* ============================================================================ */
 
-/* ---- utilities: normalize and validate links ---- */
+/* ---- utilities ---- */
 function normalizeUrl(u){
   if(!u) return "";
   u = String(u).trim();
   if(!/^https?:\/\//i.test(u)) u = "https://" + u.replace(/^\/+/, "");
-  try{ new URL(u); return u; }catch{ return ""; }
+  try { new URL(u); return u; } catch { return ""; }
 }
 
-/* ---- wire buttons safely ---- */
+/* ---- wire buttons robustly (each independent) ---- */
 const buyEl = document.getElementById("buyLink");
 const twEl  = document.getElementById("twitterLink");
 const BUY_URL = normalizeUrl(CONFIG.LINKS.BUY);
 const TW_URL  = normalizeUrl(CONFIG.LINKS.TW);
+
+// Set hrefs for right-click/copy
 if (buyEl) buyEl.href = BUY_URL || "#";
 if (twEl)  twEl.href  = TW_URL  || "#";
 
-/* ==================================================================== */
-/* ===== everything below is the connect-the-dots app logic ====== */
+// Bind clicks so a bad/empty URL for one button doesn't break the other
+function bindOpen(el, url){
+  if(!el) return;
+  el.addEventListener("click",(e)=>{
+    if(!url){ e.preventDefault(); return; }
+    e.preventDefault();
+    window.open(url, "_blank", "noopener");
+  });
+}
+bindOpen(buyEl, BUY_URL);
+bindOpen(twEl,  TW_URL);
 
+/* ===================== App: connect-the-dots logic ===================== */
 const TOKEN_CA = (CONFIG.TOKEN_CA || "").trim();
 const POLL_MS  = 15000;
 
@@ -135,7 +148,7 @@ const DOTS = [
   { mc:1500000, name:"Final Save",     lore:"Dot connected. Run complete.",        stage:9,  x:930, y:160 }
 ];
 
-/* DOM */
+/* DOM refs */
 const map = document.getElementById('map');
 const edgesG = document.getElementById('edges');
 const nodesG = document.getElementById('nodes');
@@ -290,7 +303,7 @@ function step(mc){
   lastIdx=idx;
 }
 
-/* override (?mc=120k) */
+/* demo override (?mc=120k) */
 function applyOverrideIfAny(){
   const q=new URLSearchParams(location.search); const v=q.get('mc'); if(!v) return false;
   const m=v.toLowerCase().replace(/\$/g,'').trim().match(/^([\d.]+)\s*([km])?$/);
@@ -308,7 +321,7 @@ async function tick(){
   if(mc){ currentMC = mc; statusEl.textContent="Live feed active"; }
   step(currentMC);
 }
-setInterval(tick, POLL_MS); tick();
+setInterval(tick, 15000); tick();
 </script>
 </body>
 </html>

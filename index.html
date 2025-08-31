@@ -48,8 +48,8 @@
   <header>
     <a class="brand" href="#"><div class="wordmark">$CHECKPOINT</div><div class="tag">Save Your Bags · lore only</div></a>
     <nav class="btns">
-      <a id="buyLink" class="btn btn--green" target="_blank" rel="noopener">BUY</a>
-      <a id="twitterLink" class="btn" target="_blank" rel="noopener">TWITTER</a>
+      <a id="buyLink" class="btn btn--green" target="_blank" rel="noopener noreferrer">BUY</a>
+      <a id="twitterLink" class="btn" target="_blank" rel="noopener noreferrer">TWITTER</a>
     </nav>
   </header>
 
@@ -60,7 +60,6 @@
         <svg id="map" class="map" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" aria-label="Checkpoint Map">
           <g id="edges"></g>
           <g id="nodes"></g>
-          <!-- watermark check -->
           <g opacity=".08">
             <circle cx="320" cy="360" r="210" fill="var(--ring)"></circle>
             <path d="M230 360 L320 450 L500 260" stroke="#000" stroke-opacity=".2" stroke-width="68" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
@@ -91,21 +90,38 @@
   <div id="badge" class="badge">Stage 0</div>
 
 <script>
-/* ====================== CONFIG (edit these 3 lines) ====================== */
+/* ====================== CONFIG — EDIT ONLY THIS ====================== */
 const CONFIG = {
-  TOKEN_CA: "GufgbhW1CJEct7yayro8EvemR1ghSyTmujK9XXgnpump",                          // <-- your contract / mint
+  TOKEN_CA: "",                             // your contract / mint
   LINKS: {
-    BUY: "https://pump.fun/coin/EwZo8iDAnVbsqKNNmRrP2v6QhcNt4L7z7EHrG2ovpump",                            // <-- your Pump.fun coin URL
-    TW:  "https://x.com/CheckCoinSol"                              // <-- your Twitter/X URL
+    BUY: "",                                // your Pump.fun coin URL
+    TW:  ""                                 // your Twitter/X URL, e.g. https://x.com/CheckCoinSol
   }
 };
-/* ======================================================================= */
+/* ==================================================================== */
 
-const TOKEN_CA = CONFIG.TOKEN_CA;
-const LINKS = CONFIG.LINKS;
-const POLL_MS = 15000;
+/* ---- utilities: normalize and validate links ---- */
+function normalizeUrl(u){
+  if(!u) return "";
+  u = String(u).trim();
+  if(!/^https?:\/\//i.test(u)) u = "https://" + u.replace(/^\/+/, "");
+  try{ new URL(u); return u; }catch{ return ""; }
+}
 
-/* Checkpoints path (edit MC/lore/coords if you want) */
+/* ---- wire buttons safely ---- */
+const buyEl = document.getElementById("buyLink");
+const twEl  = document.getElementById("twitterLink");
+const BUY_URL = normalizeUrl(CONFIG.LINKS.BUY);
+const TW_URL  = normalizeUrl(CONFIG.LINKS.TW);
+if (buyEl) buyEl.href = BUY_URL || "#";
+if (twEl)  twEl.href  = TW_URL  || "#";
+
+/* ==================================================================== */
+/* ===== everything below is the connect-the-dots app logic ====== */
+
+const TOKEN_CA = (CONFIG.TOKEN_CA || "").trim();
+const POLL_MS  = 15000;
+
 const DOTS = [
   { mc:   5000, name:"Spawn Point",    lore:"A dot is penciled onto the map.",     stage:0,  x:120, y:480 },
   { mc:  15000, name:"Scout Camp",     lore:"The first line is drawn, faint.",     stage:1,  x:210, y:420 },
@@ -119,16 +135,7 @@ const DOTS = [
   { mc:1500000, name:"Final Save",     lore:"Dot connected. Run complete.",        stage:9,  x:930, y:160 }
 ];
 
-/* ---------- Wire links safely ---------- */
-const buyEl = document.getElementById('buyLink');
-if (buyEl) buyEl.href = LINKS.BUY || "#";
-const twEl = document.getElementById('twitterLink');
-if (twEl) {
-  if (LINKS.TW) twEl.href = LINKS.TW;
-  else { twEl.removeAttribute('href'); twEl.onclick = (e)=>e.preventDefault(); }
-}
-
-/* ---------- DOM refs ---------- */
+/* DOM */
 const map = document.getElementById('map');
 const edgesG = document.getElementById('edges');
 const nodesG = document.getElementById('nodes');
@@ -142,11 +149,11 @@ const nextCPel = document.getElementById('nextCP');
 const badge = document.getElementById('badge');
 const toast = document.getElementById('toast');
 
-/* ---------- Helpers ---------- */
+/* helpers */
 const fmt = (n)=> n>=1e6 ? "$"+(n/1e6).toFixed(2).replace(/\.00$/,'')+"M"
              : n>=1e3 ? "$"+(n/1e3).toFixed(1).replace(/\.0$/,'')+"K" : "$"+Math.round(n);
 
-/* ---------- UI: chips ---------- */
+/* chips */
 function buildChips(){
   chipsBox.innerHTML='';
   DOTS.forEach(d=>{
@@ -158,7 +165,7 @@ function buildChips(){
 }
 function lightChips(mc){ [...chipsBox.children].forEach((c,i)=>c.classList.toggle('chip--lit', mc>=DOTS[i].mc)); }
 
-/* ---------- Lore persistence ---------- */
+/* lore persistence */
 const KEY = `dots_lore_${TOKEN_CA || 'demo'}`;
 const getState=()=>{ try{return JSON.parse(localStorage.getItem(KEY))||{seen:[]}}catch{return{seen:[]}} };
 const setState=(s)=>localStorage.setItem(KEY,JSON.stringify(s));
@@ -176,7 +183,7 @@ function dropLore(i){
 }
 function backfill(mc){ DOTS.forEach((d,i)=>{ if(mc>=d.mc && !seen(i)) dropLore(i); }); }
 
-/* ---------- Map drawing ---------- */
+/* map */
 function makeEdge(x1,y1,x2,y2,active){
   const line=document.createElementNS('http://www.w3.org/2000/svg','line');
   line.setAttribute('x1',x1); line.setAttribute('y1',y1);
@@ -252,9 +259,9 @@ function updateMap(idx){
   }
 }
 
-/* ---------- Live MC (Dexscreener) ---------- */
+/* live MC */
 async function getMC(){
-  if(!TOKEN_CA){ return null; } // no CA yet → stay demo/override
+  if(!TOKEN_CA){ return null; }
   try{
     const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${TOKEN_CA}`,{cache:'no-store'});
     if(!r.ok) throw new Error('http '+r.status);
@@ -265,7 +272,7 @@ async function getMC(){
   }catch(e){ console.warn('MC fetch failed:',e.message); return null; }
 }
 
-/* ---------- Evolution engine ---------- */
+/* evolve */
 let lastIdx=-1, currentMC=5000;
 function step(mc){
   liveEl.textContent = fmt(mc);
@@ -283,7 +290,7 @@ function step(mc){
   lastIdx=idx;
 }
 
-/* ---------- Demo override (?mc=120k) ---------- */
+/* override (?mc=120k) */
 function applyOverrideIfAny(){
   const q=new URLSearchParams(location.search); const v=q.get('mc'); if(!v) return false;
   const m=v.toLowerCase().replace(/\$/g,'').trim().match(/^([\d.]+)\s*([km])?$/);
@@ -291,10 +298,10 @@ function applyOverrideIfAny(){
   currentMC=Math.max(0,Math.floor(n)); statusEl.textContent="Manual override (demo)"; step(currentMC); return true;
 }
 
-/* ---------- Boot ---------- */
+/* boot */
 buildChips(); buildMap(); step(currentMC); statusEl.textContent="Live feed pending…";
 
-/* ---------- Poll ---------- */
+/* poll */
 async function tick(){
   if(applyOverrideIfAny()) return;
   const mc = await getMC();

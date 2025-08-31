@@ -91,12 +91,12 @@
   <div id="badge" class="badge">Stage 0</div>
 
 <script>
-/* ====================== CONFIG — REPLACE THESE 3 VALUES ====================== */
+/* ====================== CONFIG — already filled for you ====================== */
 const CONFIG = {
-  TOKEN_CA: "PASTE_TOKEN_CA_HERE",                 // your contract/mint (used for live MC)
+  TOKEN_CA: "Gv6f7ZxkepEqC1TyRLd2RWeDSDgFyTD6QXmzEnEpump",
   LINKS: {
-    BUY: "PASTE_PUMPFUN_URL_HERE",                 // e.g. https://pump.fun/coin/xxxxxxxxxxxxxxxx
-    TW:  "PASTE_TWITTER_URL_HERE"                  // e.g. https://x.com/CheckCoinSol
+    BUY: "https://pump.fun/coin/Gv6f7ZxkepEqC1TyRLd2RWeDSDgFyTD6QXmzEnEpump",
+    TW:  "https://x.com/CheckCoinSol"
   }
 };
 /* ============================================================================ */
@@ -250,7 +250,7 @@ function animateEdge(i){
   active.setAttribute('stroke-dashoffset','800');
   active.setAttribute('data-i', String(i));
   edgesG.replaceChild(active,e);
-  active.animate([{strokeDashoffset:800},{strokeDashoffset:0}],{duration:900,easing:'cubic-bezier(.2,.8,.2,1)',fill:'forwards'});
+  active.animate([{strokeDashoffset:800},{strokeDashoffset:0}],{duration:900,easing:'cubic-bezier(.2,.8,.2,.1)',fill:'forwards'});
 }
 function updateMap(idx){
   for(let i=0;i<DOTS.length-1;i++){

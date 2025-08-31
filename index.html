@@ -49,7 +49,7 @@
     <a class="brand" href="#"><div class="wordmark">$CHECKPOINT</div><div class="tag">Save Your Bags · lore only</div></a>
     <nav class="btns">
       <a id="buyLink" class="btn btn--green" target="_blank" rel="noopener">BUY</a>
-      <a id="https://x.com/CheckCoinSol" class="btn" target="_blank" rel="noopener">TWITTER</a>
+      <a id="twitterLink" class="btn" href="https://x.com/CheckCoinSol" target="_blank" rel="noopener">TWITTER</a>
     </nav>
   </header>
 
@@ -91,18 +91,16 @@
 
 <script>
 /* ====================== CONFIG ====================== */
-/* TODO: paste your real contract/mint when ready */
-const TOKEN_CA = ""; // ← leave empty for now
+const TOKEN_CA = ""; // paste your real contract/mint when live
 
-/* TODO: set your links (BUY works now, TW left blank) */
 const LINKS = {
-  BUY: "#",                 // e.g. "https://pump.fun/coin/your-coin"
-  TW:  "https://x.com/CheckCoinSol"                   // leave empty on purpose
+  BUY: "#",                                   // replace with Pump.fun buy link
+  TW:  "https://x.com/CheckCoinSol"           // Twitter/X link
 };
 
 const POLL_MS = 15000;
 
-/* Checkpoints path (can tweak MC & coordinates) */
+/* Checkpoints path (you can tweak MC & coordinates) */
 const DOTS = [
   { mc:   5000, name:"Spawn Point",    lore:"A dot is penciled onto the map.",     stage:0,  x:120, y:480 },
   { mc:  15000, name:"Scout Camp",     lore:"The first line is drawn, faint.",     stage:1,  x:210, y:420 },
@@ -117,10 +115,9 @@ const DOTS = [
 ];
 /* ==================================================== */
 
-/* Wire links (TW left blank safely) */
+/* Wire links */
 document.getElementById('buyLink').href = LINKS.BUY || "#";
-const tw = document.getElementById('twitterLink');
-if (LINKS.TW) tw.href = LINKS.TW; else { tw.removeAttribute('href'); tw.onclick=(e)=>e.preventDefault(); }
+document.getElementById('twitterLink').href = LINKS.TW;
 
 /* DOM refs */
 const map = document.getElementById('map');

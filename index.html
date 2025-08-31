@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>$CHECKPOINT — Connect the Dots</title>
+<link href="https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Kalam:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{ --ink:#0a0a0a; --paper:#f6f4f1; --ring:#19e45a; --line:#dcd7cf; --muted:#60666d; }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Kalam",system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  header{display:flex;justify-content:space-between;align-items:center;padding:18px clamp(14px,5vw,40px);border-bottom:2px dashed var(--line)}
+  .brand{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit}
+  .wordmark{font-family:"Gloria Hallelujah";font-size:clamp(26px,6vw,44px)}
+  .tag{color:#7a7a7a;font-size:14px}
+  .btns{display:flex;gap:10px}
+  .btn{border:3px solid var(--ink);background:#fff;border-radius:14px;padding:10px 14px;font-weight:700;text-decoration:none;color:var(--ink);box-shadow:4px 4px 0 #0002;font-family:"Gloria Hallelujah"}
+  .btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #0002}
+  .btn--green{background:linear-gradient(180deg,var(--ring) 0%,#5ef494 100%);color:#063a20}
+
+  main{padding:22px clamp(14px,5vw,40px) 80px;max-width:1250px;margin:auto}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+  @media (max-width:1000px){.grid{grid-template-columns:1fr}}
+  .panel{background:#fff;border:3px solid var(--ink);border-radius:18px;padding:16px;box-shadow:8px 8px 0 #0001}
+  .panel h2{margin:0 0 10px;font-family:"Gloria Hallelujah";font-size:22px}
+  .statline{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);margin:8px 0 8px}
+  .status{font-weight:700;margin:6px 0 4px}
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+  .chip{background:#fff;border:3px dashed var(--ink);border-radius:999px;padding:8px 12px;font-weight:700;font-family:"Gloria Hallelujah"}
+  .chip--lit{background:#eafff0;border-style:solid}
+  .log{display:grid;gap:10px;margin-top:10px}
+  .entry{background:#fff;border:3px solid var(--ink);border-radius:14px;padding:12px}
+  .entry small{color:#6e6e6e;display:block;margin-top:4px}
+
+  .map-wrap{position:relative; padding:12px}
+  .map{width:100%; height:auto; display:block}
+  .tip{position:absolute; pointer-events:none; background:#fff; border:2px solid #111; border-radius:10px; padding:6px 8px; font-size:13px; font-weight:700; box-shadow:4px 4px 0 #0001; transform:translate(-50%,-140%); white-space:nowrap; display:none}
+
+  .toast{position:fixed;left:50%;transform:translateX(-50%);top:-80px;z-index:50;background:#0f261a;color:#dcffef;border:3px solid #0a5c33;padding:10px 14px;border-radius:12px;box-shadow:4px 4px 0 #0001;font-weight:800;font-family:"Gloria Hallelujah";transition:top .5s}
+  .toast.show{top:16px}
+  .badge{position:fixed;right:16px;bottom:16px;z-index:10;background:#fff;border:3px solid var(--ink);border-radius:12px;padding:10px 12px;box-shadow:4px 4px 0 #0001;font-weight:800;font-family:"Gloria Hallelujah"}
+
+  body.stage-6 .panel{box-shadow:10px 10px 0 #0002}
+  body.stage-8 .panel{box-shadow:12px 12px 0 #0003;border-width:4px}
+</style>
+</head>
+<body class="stage-0">
+  <header>
+    <a class="brand" href="#"><div class="wordmark">$CHECKPOINT</div><div class="tag">Save Your Bags · lore only</div></a>
+    <nav class="btns">
+      <a id="buyLink" class="btn btn--green" target="_blank" rel="noopener">BUY</a>
+      <a id="twitterLink" class="btn" target="_blank" rel="noopener">TWITTER</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="grid">
+      <div class="panel map-wrap">
+        <h2>Connect the Dots</h2>
+        <svg id="map" class="map" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" aria-label="Checkpoint Map">
+          <g id="edges"></g>
+          <g id="nodes"></g>
+          <g opacity=".08">
+            <circle cx="320" cy="360" r="210" fill="var(--ring)"></circle>
+            <path d="M230 360 L320 450 L500 260" stroke="#000" stroke-opacity=".2" stroke-width="68" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+            <path d="M230 360 L320 450 L500 260" stroke="#fff" stroke-opacity=".9" stroke-width="48" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+          </g>
+        </svg>
+        <div id="tip" class="tip"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Run Status</h2>
+        <div class="statline">
+          <div>Live MC: <b id="liveMC">$—</b></div>
+          <div>Last Checkpoint: <b id="lastCP">None</b></div>
+          <div>Next: <b id="nextCP">—</b></div>
+          <div>Updates every <b>15s</b></div>
+        </div>
+        <div id="status" class="status">Live feed pending…</div>
+        <div id="chips" class="chips"></div>
+
+        <h2 style="margin-top:14px">Checkpoint Logbook</h2>
+        <div id="log" class="log"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast">Checkpoint Saved</div>
+  <div id="badge" class="badge">Stage 0</div>
+
+<script>
+/* ====================== CONFIG ====================== */
+/* TODO: paste your real contract/mint when ready */
+const TOKEN_CA = ""; // ← leave empty for now
+
+/* TODO: set your links (BUY works now, TW left blank) */
+const LINKS = {
+  BUY: "#",                 // e.g. "https://pump.fun/coin/your-coin"
+  TW:  ""                   // leave empty on purpose
+};
+
+const POLL_MS = 15000;
+
+/* Checkpoints path (can tweak MC & coordinates) */
+const DOTS = [
+  { mc:   5000, name:"Spawn Point",    lore:"A dot is penciled onto the map.",     stage:0,  x:120, y:480 },
+  { mc:  15000, name:"Scout Camp",     lore:"The first line is drawn, faint.",     stage:1,  x:210, y:420 },
+  { mc:  30000, name:"Doodle Ring",    lore:"The path turns uphill.",              stage:2,  x:300, y:370 },
+  { mc:  60000, name:"Bold Stroke",    lore:"Ink gets darker, hand steadier.",     stage:3,  x:380, y:320 },
+  { mc: 120000, name:"Ink Bloom",      lore:"A green hum behind the page.",        stage:4,  x:470, y:270 },
+  { mc: 250000, name:"Respawn Shrine", lore:"A marker dot is circled twice.",      stage:5,  x:560, y:230 },
+  { mc: 500000, name:"Street Sticker", lore:"Someone adds a sticker near here.",   stage:6,  x:650, y:210 },
+  { mc: 750000, name:"Billboard Ink",  lore:"Crowd notices the line.",             stage:7,  x:760, y:240 },
+  { mc:1000000, name:"Citadel Draft",  lore:"The summit draws near.",              stage:8,  x:860, y:200 },
+  { mc:1500000, name:"Final Save",     lore:"Dot connected. Run complete.",        stage:9,  x:930, y:160 }
+];
+/* ==================================================== */
+
+/* Wire links (TW left blank safely) */
+document.getElementById('buyLink').href = LINKS.BUY || "#";
+const tw = document.getElementById('twitterLink');
+if (LINKS.TW) tw.href = LINKS.TW; else { tw.removeAttribute('href'); tw.onclick=(e)=>e.preventDefault(); }
+
+/* DOM refs */
+const map = document.getElementById('map');
+const edgesG = document.getElementById('edges');
+const nodesG = document.getElementById('nodes');
+const tip = document.getElementById('tip');
+const chipsBox = document.getElementById('chips');
+const logBox = document.getElementById('log');
+const liveEl = document.getElementById('liveMC');
+const statusEl = document.getElementById('status');
+const lastCPel = document.getElementById('lastCP');
+const nextCPel = document.getElementById('nextCP');
+const badge = document.getElementById('badge');
+const toast = document.getElementById('toast');
+
+/* Helpers */
+const fmt = (n)=> n>=1e6 ? "$"+(n/1e6).toFixed(2).replace(/\.00$/,'')+"M"
+             : n>=1e3 ? "$"+(n/1e3).toFixed(1).replace(/\.0$/,'')+"K" : "$"+Math.round(n);
+
+/* Chips */
+function buildChips(){
+  chipsBox.innerHTML='';
+  DOTS.forEach(d=>{
+    const el=document.createElement('div');
+    el.className='chip';
+    el.textContent=`${d.name} · ${fmt(d.mc)}`;
+    chipsBox.appendChild(el);
+  });
+}
+function lightChips(mc){ [...chipsBox.children].forEach((c,i)=>c.classList.toggle('chip--lit', mc>=DOTS[i].mc)); }
+
+/* Lore persistence */
+const KEY = `dots_lore_${TOKEN_CA || 'demo'}`;
+const getState=()=>{ try{return JSON.parse(localStorage.getItem(KEY))||{seen:[]}}catch{return{seen:[]}} };
+const setState=(s)=>localStorage.setItem(KEY,JSON.stringify(s));
+const seen=(i)=>getState().seen.includes(i);
+const mark=(i)=>{ const s=getState(); if(!s.seen.includes(i)){ s.seen.push(i); setState(s); } };
+function dropLore(i){
+  if(seen(i)) return;
+  const d=DOTS[i];
+  const div=document.createElement('div');
+  div.className='entry';
+  div.innerHTML=`<strong>${d.name}</strong><br>${d.lore}<small> Saved at ${fmt(d.mc)}</small>`;
+  logBox.prepend(div);
+  mark(i);
+  toast.textContent="Checkpoint Saved"; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),1600);
+}
+function backfill(mc){ DOTS.forEach((d,i)=>{ if(mc>=d.mc && !seen(i)) dropLore(i); }); }
+
+/* Map drawing */
+function makeEdge(x1,y1,x2,y2,active){
+  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+  line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+  line.setAttribute('stroke', active? 'var(--ring)' : '#111');
+  line.setAttribute('stroke-width', active? '10' : '6');
+  line.setAttribute('stroke-linecap','round');
+  if(!active){ line.setAttribute('stroke-dasharray','10 12'); line.setAttribute('opacity','.6'); }
+  return line;
+}
+function makeNode(x,y,active,label){
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('transform',`translate(${x},${y})`);
+  const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  c.setAttribute('r', active? '16' : '12');
+  c.setAttribute('fill', active? 'var(--ring)' : '#fff');
+  c.setAttribute('stroke','#111'); c.setAttribute('stroke-width','5');
+  if(!active) c.setAttribute('stroke-dasharray','6 6');
+  g.appendChild(c);
+  g.addEventListener('mouseenter', ()=>{
+    tip.style.display='block';
+    tip.textContent = `${label}`;
+    const p = map.getBoundingClientRect();
+    tip.style.left = (p.left + (x/1000)*p.width) + 'px';
+    tip.style.top  = (p.top  + (y/600)*p.height) + 'px';
+  });
+  g.addEventListener('mouseleave', ()=> tip.style.display='none');
+  return g;
+}
+function buildMap(){
+  edgesG.innerHTML=''; nodesG.innerHTML='';
+  for(let i=0;i<DOTS.length-1;i++){
+    const a=DOTS[i], b=DOTS[i+1];
+    const e = makeEdge(a.x,a.y,b.x,b.y,false);
+    e.setAttribute('data-i', String(i));
+    edgesG.appendChild(e);
+  }
+  DOTS.forEach((d,i)=>{
+    const n = makeNode(d.x,d.y,false,d.name);
+    n.setAttribute('data-i', String(i));
+    nodesG.appendChild(n);
+  });
+}
+function animateEdge(i){
+  if(i<0) return;
+  const a=DOTS[i], b=DOTS[i+1];
+  const e = document.querySelector(`line[data-i="${i}"]`);
+  if(!e) return;
+  const active = makeEdge(a.x,a.y,b.x,b.y,true);
+  active.setAttribute('stroke-dasharray','800');
+  active.setAttribute('stroke-dashoffset','800');
+  active.setAttribute('data-i', String(i));
+  edgesG.replaceChild(active,e);
+  active.animate([{strokeDashoffset:800},{strokeDashoffset:0}],{duration:900,easing:'cubic-bezier(.2,.8,.2,1)',fill:'forwards'});
+}
+function updateMap(idx){
+  for(let i=0;i<DOTS.length-1;i++){
+    const a=DOTS[i], b=DOTS[i+1];
+    const cur = document.querySelector(`line[data-i="${i}"]`);
+    if(!cur) continue;
+    if(i < idx){
+      const solid = makeEdge(a.x,a.y,b.x,b.y,true); solid.setAttribute('data-i', String(i));
+      edgesG.replaceChild(solid, cur);
+    }
+  }
+  for(let i=0;i<DOTS.length;i++){
+    const cur = document.querySelector(`g[data-i="${i}"]`);
+    if(!cur) continue;
+    const n = makeNode(DOTS[i].x,DOTS[i].y, i<=idx, DOTS[i].name);
+    n.setAttribute('data-i', String(i));
+    nodesG.replaceChild(n, cur);
+    if(i===idx){ const c=n.querySelector('circle'); c.animate([{transform:'scale(1)'},{transform:'scale(1.25)'},{transform:'scale(1)'}],{duration:600,easing:'ease-out'}); }
+  }
+}
+
+/* Live MC (uses TOKEN_CA if present; else stays on baseline/demo) */
+async function getMC(){
+  if(!TOKEN_CA){ return null; } // CA intentionally blank for now
+  try{
+    const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${TOKEN_CA}`,{cache:'no-store'});
+    if(!r.ok) throw new Error('http '+r.status);
+    const d=await r.json();
+    const pairs=(d.pairs||[]).sort((a,b)=>(b.liquidity?.usd||0)-(a.liquidity?.usd||0));
+    const p=pairs[0]; const mc=Math.floor(p?.marketCap || p?.fdv || 0);
+    return mc || null;
+  }catch(e){ console.warn('MC fetch failed:',e.message); return null; }
+}
+
+/* Evolve everything */
+let lastIdx=-1, currentMC=5000;
+function step(mc){
+  liveEl.textContent = fmt(mc);
+  lightChips(mc);
+  let idx=-1; DOTS.forEach((d,i)=>{ if(mc>=d.mc) idx=i; });
+  const stage = idx>=0 ? DOTS[idx].stage : 0;
+  document.body.className = `stage-${stage}`;
+  badge.textContent = `Stage ${stage}`;
+  lastCPel.textContent = idx>=0 ? DOTS[idx].name : 'None';
+  nextCPel.textContent = (idx+1<DOTS.length) ? `${DOTS[idx+1].name} (${fmt(DOTS[idx+1].mc)})` : '—';
+
+  if(lastIdx===-1){ updateMap(idx); backfill(mc); }
+  else if(idx>lastIdx){ animateEdge(idx-1); updateMap(idx); dropLore(idx); statusEl.textContent=`Checkpoint Saved: ${DOTS[idx].name}`; }
+  else if(idx<lastIdx){ statusEl.textContent=`Respawning at ${idx>=0?DOTS[idx].name:'None'}`; updateMap(idx); }
+  lastIdx=idx;
+}
+
+/* Demo override (?mc=120k) */
+function applyOverrideIfAny(){
+  const q=new URLSearchParams(location.search); const v=q.get('mc'); if(!v) return false;
+  const m=v.toLowerCase().replace(/\$/g,'').trim().match(/^([\d.]+)\s*([km])?$/);
+  if(!m) return false; let n=parseFloat(m[1]); if(m[2]==='k') n*=1e3; if(m[2]==='m') n*=1e6;
+  currentMC=Math.max(0,Math.floor(n)); statusEl.textContent="Manual override (demo)"; step(currentMC); return true;
+}
+
+/* Boot */
+buildChips(); buildMap(); step(currentMC); statusEl.textContent="Live feed pending…";
+
+/* Poll */
+async function tick(){
+  if(applyOverrideIfAny()) return;
+  const mc = await getMC();
+  if(mc){ currentMC = mc; statusEl.textContent="Live feed active"; }
+  step(currentMC);
+}
+setInterval(tick, POLL_MS); tick();
+</script>
+</body>
+</html>

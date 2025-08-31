@@ -49,7 +49,7 @@
     <a class="brand" href="#"><div class="wordmark">$CHECKPOINT</div><div class="tag">Save Your Bags · lore only</div></a>
     <nav class="btns">
       <a id="buyLink" class="btn btn--green" target="_blank" rel="noopener">BUY</a>
-      <a id="twitterLink" class="btn" href="https://x.com/CheckCoinSol" target="_blank" rel="noopener">TWITTER</a>
+      <a id="twitterLink" class="btn" target="_blank" rel="noopener">TWITTER</a>
     </nav>
   </header>
 
@@ -60,6 +60,7 @@
         <svg id="map" class="map" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" aria-label="Checkpoint Map">
           <g id="edges"></g>
           <g id="nodes"></g>
+          <!-- watermark check -->
           <g opacity=".08">
             <circle cx="320" cy="360" r="210" fill="var(--ring)"></circle>
             <path d="M230 360 L320 450 L500 260" stroke="#000" stroke-opacity=".2" stroke-width="68" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
@@ -90,17 +91,21 @@
   <div id="badge" class="badge">Stage 0</div>
 
 <script>
-/* ====================== CONFIG ====================== */
-const TOKEN_CA = ""; // paste your real contract/mint when live
-
-const LINKS = {
-  BUY: "#",                                   // replace with Pump.fun buy link
-  TW:  "https://x.com/CheckCoinSol"           // Twitter/X link
+/* ====================== CONFIG (edit these 3 lines) ====================== */
+const CONFIG = {
+  TOKEN_CA: "",                          // <-- your contract / mint
+  LINKS: {
+    BUY: "#",                            // <-- your Pump.fun coin URL
+    TW:  ""                              // <-- your Twitter/X URL
+  }
 };
+/* ======================================================================= */
 
+const TOKEN_CA = CONFIG.TOKEN_CA;
+const LINKS = CONFIG.LINKS;
 const POLL_MS = 15000;
 
-/* Checkpoints path (you can tweak MC & coordinates) */
+/* Checkpoints path (edit MC/lore/coords if you want) */
 const DOTS = [
   { mc:   5000, name:"Spawn Point",    lore:"A dot is penciled onto the map.",     stage:0,  x:120, y:480 },
   { mc:  15000, name:"Scout Camp",     lore:"The first line is drawn, faint.",     stage:1,  x:210, y:420 },
@@ -113,13 +118,17 @@ const DOTS = [
   { mc:1000000, name:"Citadel Draft",  lore:"The summit draws near.",              stage:8,  x:860, y:200 },
   { mc:1500000, name:"Final Save",     lore:"Dot connected. Run complete.",        stage:9,  x:930, y:160 }
 ];
-/* ==================================================== */
 
-/* Wire links */
-document.getElementById('buyLink').href = LINKS.BUY || "#";
-document.getElementById('twitterLink').href = LINKS.TW;
+/* ---------- Wire links safely ---------- */
+const buyEl = document.getElementById('buyLink');
+if (buyEl) buyEl.href = LINKS.BUY || "#";
+const twEl = document.getElementById('twitterLink');
+if (twEl) {
+  if (LINKS.TW) twEl.href = LINKS.TW;
+  else { twEl.removeAttribute('href'); twEl.onclick = (e)=>e.preventDefault(); }
+}
 
-/* DOM refs */
+/* ---------- DOM refs ---------- */
 const map = document.getElementById('map');
 const edgesG = document.getElementById('edges');
 const nodesG = document.getElementById('nodes');
@@ -133,11 +142,11 @@ const nextCPel = document.getElementById('nextCP');
 const badge = document.getElementById('badge');
 const toast = document.getElementById('toast');
 
-/* Helpers */
+/* ---------- Helpers ---------- */
 const fmt = (n)=> n>=1e6 ? "$"+(n/1e6).toFixed(2).replace(/\.00$/,'')+"M"
              : n>=1e3 ? "$"+(n/1e3).toFixed(1).replace(/\.0$/,'')+"K" : "$"+Math.round(n);
 
-/* Chips */
+/* ---------- UI: chips ---------- */
 function buildChips(){
   chipsBox.innerHTML='';
   DOTS.forEach(d=>{
@@ -149,7 +158,7 @@ function buildChips(){
 }
 function lightChips(mc){ [...chipsBox.children].forEach((c,i)=>c.classList.toggle('chip--lit', mc>=DOTS[i].mc)); }
 
-/* Lore persistence */
+/* ---------- Lore persistence ---------- */
 const KEY = `dots_lore_${TOKEN_CA || 'demo'}`;
 const getState=()=>{ try{return JSON.parse(localStorage.getItem(KEY))||{seen:[]}}catch{return{seen:[]}} };
 const setState=(s)=>localStorage.setItem(KEY,JSON.stringify(s));
@@ -167,7 +176,7 @@ function dropLore(i){
 }
 function backfill(mc){ DOTS.forEach((d,i)=>{ if(mc>=d.mc && !seen(i)) dropLore(i); }); }
 
-/* Map drawing */
+/* ---------- Map drawing ---------- */
 function makeEdge(x1,y1,x2,y2,active){
   const line=document.createElementNS('http://www.w3.org/2000/svg','line');
   line.setAttribute('x1',x1); line.setAttribute('y1',y1);
@@ -243,9 +252,9 @@ function updateMap(idx){
   }
 }
 
-/* Live MC (uses TOKEN_CA if present; else stays on baseline/demo) */
+/* ---------- Live MC (Dexscreener) ---------- */
 async function getMC(){
-  if(!TOKEN_CA){ return null; } // CA intentionally blank for now
+  if(!TOKEN_CA){ return null; } // no CA yet → stay demo/override
   try{
     const r=await fetch(`https://api.dexscreener.com/latest/dex/tokens/${TOKEN_CA}`,{cache:'no-store'});
     if(!r.ok) throw new Error('http '+r.status);
@@ -256,7 +265,7 @@ async function getMC(){
   }catch(e){ console.warn('MC fetch failed:',e.message); return null; }
 }
 
-/* Evolve everything */
+/* ---------- Evolution engine ---------- */
 let lastIdx=-1, currentMC=5000;
 function step(mc){
   liveEl.textContent = fmt(mc);
@@ -274,7 +283,7 @@ function step(mc){
   lastIdx=idx;
 }
 
-/* Demo override (?mc=120k) */
+/* ---------- Demo override (?mc=120k) ---------- */
 function applyOverrideIfAny(){
   const q=new URLSearchParams(location.search); const v=q.get('mc'); if(!v) return false;
   const m=v.toLowerCase().replace(/\$/g,'').trim().match(/^([\d.]+)\s*([km])?$/);
@@ -282,10 +291,10 @@ function applyOverrideIfAny(){
   currentMC=Math.max(0,Math.floor(n)); statusEl.textContent="Manual override (demo)"; step(currentMC); return true;
 }
 
-/* Boot */
+/* ---------- Boot ---------- */
 buildChips(); buildMap(); step(currentMC); statusEl.textContent="Live feed pending…";
 
-/* Poll */
+/* ---------- Poll ---------- */
 async function tick(){
   if(applyOverrideIfAny()) return;
   const mc = await getMC();
